@@ -5,6 +5,11 @@ public class Barricade : MonoBehaviour
     public int health = 5;
     public SpriteRenderer spriteRenderer;
 
+    [Header("Damage Visuals")]
+    [Tooltip("How much smaller the barricade gets per hit (multiplicative).")]
+    [Range(0.5f, 0.98f)]
+    public float scaleMultiplierPerHit = 0.9f;
+
     void Start()
     {
         if (spriteRenderer == null)
@@ -29,11 +34,14 @@ public class Barricade : MonoBehaviour
     {
         health--;
 
-        // Update visual - make more transparent as health decreases
+        // Shrink a bit each hit
+        transform.localScale *= scaleMultiplierPerHit;
+
+        // Optional: also fade slightly (nice feedback)
         if (spriteRenderer != null)
         {
             Color color = spriteRenderer.color;
-            color.a = health / 5f;
+            color.a = Mathf.Clamp01(health / 5f);
             spriteRenderer.color = color;
         }
 
