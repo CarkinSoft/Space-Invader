@@ -20,22 +20,29 @@ public class Bullet : MonoBehaviour
             rb.linearVelocity = Vector2.up * speed;
             gameObject.layer = LayerMask.NameToLayer("Bullet");
         }
-
-        Debug.Log("Wwweeeeee");
     }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // Enemy bullets can hit player
-        if (isEnemyBullet && collision.gameObject.CompareTag("Player"))
+        // Enemy bullets ignore other enemies
+        if (isEnemyBullet)
         {
-            // Notify player of death
-            Player player = collision.gameObject.GetComponent<Player>();
-            if (player != null)
+            // Ignore collisions with enemies
+            if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
-                player.Die();
+                return;
             }
-            Destroy(gameObject);
+
+            // Hit player
+            if (collision.gameObject.CompareTag("Player"))
+            {
+                Player player = collision.gameObject.GetComponent<Player>();
+                if (player != null)
+                {
+                    player.Die();
+                }
+                Destroy(gameObject);
+            }
         }
     }
 }

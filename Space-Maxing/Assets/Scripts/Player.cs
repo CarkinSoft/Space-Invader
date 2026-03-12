@@ -42,7 +42,11 @@ public class Player : MonoBehaviour
 
     private void Shoot()
     {
-        GameObject shot = Instantiate(bulletPrefab, shootOffsetTransform.position, Quaternion.identity);
+        if (bulletPrefab == null) return;
+
+        // Use shootOffsetTransform if set, otherwise use player position
+        Vector3 spawnPos = shootOffsetTransform != null ? shootOffsetTransform.position : transform.position;
+        GameObject shot = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
         Destroy(shot, 3f);
 
         // Play shoot sound
@@ -63,7 +67,7 @@ public class Player : MonoBehaviour
 
         if (Mathf.Approximately(inputX, 0f)) return;
 
-        Vector3 delta = (-transform.up) * (inputX * moveSpeed * Time.deltaTime);
+        Vector3 delta = Vector3.right * (inputX * moveSpeed * Time.deltaTime);
         Vector3 newPos = transform.position + delta;
         newPos.x = Mathf.Clamp(newPos.x, minX, maxX);
         transform.position = newPos;
