@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 1473731116809266786}
   - component: {fileID: 8470326532255400607}
-  - component: {fileID: 567185687932707646}
   - component: {fileID: 2461414133722336908}
   - component: {fileID: 761292256023115531}
   - component: {fileID: 5889271921978272045}
   - component: {fileID: -8009755991556832875}
+  - component: {fileID: 6240216675605323478}
   m_Layer: 9
   m_Name: UFOEnemy
   m_TagString: Untagged
@@ -75,29 +75,14 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 2.56, y: 2.56}
-    newSize: {x: 2.56, y: 2.56}
+    oldSize: {x: 8.19, y: 8.01}
+    newSize: {x: 8.19, y: 8.01}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &567185687932707646
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1130315089605689828}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 796aad014e2107342a60ed88af81c745, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ticClip: {fileID: 8300000, guid: 282cff78a31614f37b6ee2a1b223557a, type: 3}
-  tocClip: {fileID: 8300000, guid: 4c2f3be80211e43a4b22de02d001d4ba, type: 3}
-  enemyType: 40
 --- !u!95 &2461414133722336908
 Animator:
   serializedVersion: 7
@@ -108,7 +93,7 @@ Animator:
   m_GameObject: {fileID: 1130315089605689828}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: aeb1d002044ef4d8c8abaec8e44289f0, type: 2}
+  m_Controller: {fileID: 9100000, guid: ac61a84d084a64790a02d8c6426f872a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -169,15 +154,15 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -8412623070897447454, guid: d08e38fbd9a134390a29973281722437, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 2.56, y: 2.56}
+  m_Size: {x: 8.19, y: 8.01}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
 --- !u!82 &5889271921978272045
 AudioSource:
@@ -290,3 +275,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UfoMover
   speed: 5
   destroyWhenPastX: 8
+--- !u!114 &6240216675605323478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1130315089605689828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fad3a752794f497cb5b6591360b1c607, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UfoMover
+  speed: 6
+  destroyWhenPastX: 10

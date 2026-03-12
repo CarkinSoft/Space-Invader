@@ -1,6 +1,5 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -9,36 +8,49 @@ public class Player : MonoBehaviour
 
     [Header("Movement")]
     public float moveSpeed = 6f;
-
-    [Tooltip("World-space horizontal clamp (because you move left/right on screen).")]
     public float minX = -7.5f;
-
-    [Tooltip("World-space horizontal clamp (because you move left/right on screen).")]
     public float maxX = 7.5f;
 
+    [Header("Audio")]
+    [Tooltip("Sound played when the player fires a bullet.")]
+    public AudioClip shootClip;
+
+    [Tooltip("Sound played when the player is destroyed.")]
+    public AudioClip explodeClip;
+
     private Animator animator;
+    private AudioSource audioSource;
+    private bool isDead = false;
 
     void Start()
     {
         animator = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
     {
+        if (isDead) return;
+
         HandleMovement();
 
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            GameObject shot = Instantiate(bulletPrefab, shootOffsetTransform.position, Quaternion.identity);
-            Debug.Log("Bang!");
-
-            Destroy(shot, 3f);
-
-            if (animator != null)
-            {
-                animator.SetTrigger("Shoot");
-            }
+            Shoot();
         }
+    }
+
+    private void Shoot()
+    {
+        GameObject shot = Instantiate(bulletPrefab, shootOffsetTransform.position, Quaternion.identity);
+        Destroy(shot, 3f);
+
+        // Play shoot sound
+        if (audioSource != null && shootClip != null)
+            audioSource.PlayOneShot(shootClip);
+
+        if (animator != null)
+            animator.SetTrigger("Shoot");
     }
 
     private void HandleMovement()
@@ -51,32 +63,36 @@ public class Player : MonoBehaviour
 
         if (Mathf.Approximately(inputX, 0f)) return;
 
-        // Player is rotated so local up = world-left and local down = world-right.
-        // Using -transform.up makes inputX=+1 (D) move world-right.
         Vector3 delta = (-transform.up) * (inputX * moveSpeed * Time.deltaTime);
-
         Vector3 newPos = transform.position + delta;
-
-        // Clamp horizontally in world space (screen left/right)
         newPos.x = Mathf.Clamp(newPos.x, minX, maxX);
-
         transform.position = newPos;
     }
 
     public void Die()
     {
+        if (isDead) return;
+        isDead = true;
+
         Debug.Log("Player died!");
 
+        // Play explosion sound
+        if (audioSource != null && explodeClip != null)
+            AudioSource.PlayClipAtPoint(explodeClip, transform.position);
+
         if (animator != null)
-        {
             animator.SetTrigger("Death");
-        }
 
-        Invoke("ReloadScene", 2f);
-    }
+        // Disable controls
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null)
+            col.enabled = false;
 
-    void ReloadScene()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // Destroy player after animation plays (or just hide it)
+        Destroy(gameObject, 0.5f);
+
+        // Tell GameManager — it will route to Credits after a delay
+        if (GameManager.Instance != null)
+            GameManager.Instance.NotifyPlayerDied();
     }
 }

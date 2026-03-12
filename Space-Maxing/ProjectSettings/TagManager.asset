@@ -14,8 +14,8 @@ TagManager:
   - Bullet
   - EnemyBullet
   - Barricade
-  - 
-  - 
+  - Enemy
+  - Player
   - 
   - 
   - 

@@ -4,21 +4,18 @@ using UnityEngine;
 
 public class EnemyGroup : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    public float stepDistance = 0.5f;
+    [Header("Movement Settings")] public float stepDistance = 0.5f;
     public float stepDownDistance = 0.5f;
     public float initialStepInterval = 1f;
     public float minStepInterval = 0.1f;
 
-    [Header("Shooting Settings")]
-    public GameObject enemyBulletPrefab;
+    [Header("Shooting Settings")] public GameObject enemyBulletPrefab;
     public float shootInterval = 2f;
 
-    [Header("Wave End")]
-    public float respawnDelaySeconds = 1.5f;
+    [Header("Wave End")] [Tooltip("Set to 0 to go to Credits immediately when all enemies are dead (no respawn).")]
+    public float respawnDelaySeconds = 0f;
 
-    [Header("UFO (Enemy Type 4)")]
-    public GameObject ufoPrefab;
+    [Header("UFO (Enemy Type 4)")] public GameObject ufoPrefab;
     public float ufoMinSpawnTime = 8f;
     public float ufoMaxSpawnTime = 18f;
     public float ufoSpawnY = 4.2f;
@@ -27,11 +24,11 @@ public class EnemyGroup : MonoBehaviour
     private float currentStepInterval;
     private float stepTimer;
     private float shootTimer;
-    private int direction = 1; // 1 = right, -1 = left
+    private int direction = 1;
     private int initialEnemyCount;
     private List<Enemy> enemies = new List<Enemy>();
 
-    private bool respawnQueued;
+    private bool waveCleared;
     private float ufoTimer;
 
     private Vector3 initialGroupPosition;
@@ -44,18 +41,13 @@ public class EnemyGroup : MonoBehaviour
     void Start()
     {
         initialGroupPosition = transform.position;
-
-        // Cache the starting enemies as templates (inactive clones)
         CacheEnemyTemplatesFromChildren();
-
-        // Spawn the initial wave based on templates (keeps behavior consistent)
         RespawnWaveImmediate();
 
         stepTimer = currentStepInterval;
         shootTimer = shootInterval;
 
         Enemy.OnEnemyDied += OnEnemyDestroyed;
-
         ResetUfoTimer();
     }
 
@@ -63,12 +55,9 @@ public class EnemyGroup : MonoBehaviour
     {
         Enemy.OnEnemyDied -= OnEnemyDestroyed;
 
-        // Cleanup templates we created at runtime
-        for (int i = 0; i < enemyTemplates.Count; i++)
-        {
-            if (enemyTemplates[i] != null)
-                Destroy(enemyTemplates[i]);
-        }
+        foreach (var t in enemyTemplates)
+            if (t != null)
+                Destroy(t);
     }
 
     void Update()
@@ -77,15 +66,25 @@ public class EnemyGroup : MonoBehaviour
 
         if (enemies.Count == 0)
         {
-            if (!respawnQueued)
+            if (!waveCleared)
             {
-                respawnQueued = true;
-                StartCoroutine(RespawnAfterDelay(respawnDelaySeconds));
+                waveCleared = true;
+
+                // If respawnDelaySeconds == 0, treat clearing the wave as a WIN → Credits
+                if (respawnDelaySeconds <= 0f)
+                {
+                    if (GameManager.Instance != null)
+                        GameManager.Instance.NotifyAllEnemiesKilled();
+                }
+                else
+                {
+                    StartCoroutine(RespawnAfterDelay(respawnDelaySeconds));
+                }
             }
+
             return;
         }
 
-        // UFO spawn timer (keeps happening during the wave)
         if (ufoPrefab != null)
         {
             ufoTimer -= Time.deltaTime;
@@ -113,11 +112,9 @@ public class EnemyGroup : MonoBehaviour
 
     private IEnumerator RespawnAfterDelay(float seconds)
     {
-        if (seconds > 0f)
-            yield return new WaitForSeconds(seconds);
-
+        if (seconds > 0f) yield return new WaitForSeconds(seconds);
         RespawnWaveImmediate();
-        respawnQueued = false;
+        waveCleared = false;
     }
 
     private void CacheEnemyTemplatesFromChildren()
@@ -127,52 +124,39 @@ public class EnemyGroup : MonoBehaviour
         enemyTemplateLocalRotations.Clear();
         enemyTemplateLocalScales.Clear();
 
-        // Grab the enemies currently placed as children in the scene
         Enemy[] startingEnemies = GetComponentsInChildren<Enemy>();
 
         foreach (Enemy e in startingEnemies)
         {
             if (e == null) continue;
-
             Transform t = e.transform;
-
             enemyTemplateLocalPositions.Add(t.localPosition);
             enemyTemplateLocalRotations.Add(t.localRotation);
             enemyTemplateLocalScales.Add(t.localScale);
 
-            // Make an inactive clone to use as a runtime "prefab"
             GameObject template = Instantiate(e.gameObject, transform);
             template.name = e.gameObject.name + "_TEMPLATE";
             template.SetActive(false);
-
             enemyTemplates.Add(template);
         }
 
-        // Remove the originally placed enemies (we'll spawn clean instances from templates)
         foreach (Enemy e in startingEnemies)
-        {
             if (e != null)
                 Destroy(e.gameObject);
-        }
     }
 
     private void RespawnWaveImmediate()
     {
-        // Reset group state
         transform.position = initialGroupPosition;
         direction = 1;
 
-        // Destroy any remaining children that are enemies (safety)
         Enemy[] leftover = GetComponentsInChildren<Enemy>();
-        for (int i = 0; i < leftover.Length; i++)
-        {
-            if (leftover[i] != null)
-                Destroy(leftover[i].gameObject);
-        }
+        foreach (var l in leftover)
+            if (l != null)
+                Destroy(l.gameObject);
 
         enemies.Clear();
 
-        // Spawn a fresh wave
         for (int i = 0; i < enemyTemplates.Count; i++)
         {
             GameObject template = enemyTemplates[i];
@@ -188,13 +172,11 @@ public class EnemyGroup : MonoBehaviour
             st.localScale = enemyTemplateLocalScales[i];
 
             Enemy enemy = spawned.GetComponent<Enemy>();
-            if (enemy != null)
-                enemies.Add(enemy);
+            if (enemy != null) enemies.Add(enemy);
         }
 
         initialEnemyCount = enemies.Count;
         currentStepInterval = initialStepInterval;
-
         stepTimer = currentStepInterval;
         shootTimer = shootInterval;
     }
@@ -207,18 +189,12 @@ public class EnemyGroup : MonoBehaviour
     private void SpawnUfo()
     {
         bool fromLeft = Random.value < 0.5f;
-
         float x = fromLeft ? -ufoSpawnX : ufoSpawnX;
-        Vector3 spawnPos = new Vector3(x, ufoSpawnY, 0f);
-
-        GameObject ufo = Instantiate(ufoPrefab, spawnPos, Quaternion.identity);
+        GameObject ufo = Instantiate(ufoPrefab, new Vector3(x, ufoSpawnY, 0f), Quaternion.identity);
 
         UfoMover mover = ufo.GetComponent<UfoMover>();
         if (mover != null)
-        {
-            Vector2 dir = fromLeft ? Vector2.right : Vector2.left;
-            mover.Init(dir);
-        }
+            mover.Init(fromLeft ? Vector2.right : Vector2.left);
     }
 
     void MoveStep()
@@ -228,12 +204,10 @@ public class EnemyGroup : MonoBehaviour
 
         foreach (Enemy enemy in enemies)
         {
-            if (enemy != null)
-            {
-                float x = enemy.transform.position.x;
-                if (x < leftmost) leftmost = x;
-                if (x > rightmost) rightmost = x;
-            }
+            if (enemy == null) continue;
+            float x = enemy.transform.position.x;
+            if (x < leftmost) leftmost = x;
+            if (x > rightmost) rightmost = x;
         }
 
         bool shouldMoveDown = false;
@@ -268,9 +242,7 @@ public class EnemyGroup : MonoBehaviour
     void OnEnemyDestroyed(float points)
     {
         enemies.RemoveAll(e => e == null);
-
         if (initialEnemyCount <= 0) return;
-
         float ratio = (float)enemies.Count / initialEnemyCount;
         currentStepInterval = Mathf.Lerp(minStepInterval, initialStepInterval, ratio);
     }
@@ -280,11 +252,14 @@ public class EnemyGroup : MonoBehaviour
         if (enemies.Count == 0 || enemyBulletPrefab == null) return;
 
         Enemy shooter = enemies[Random.Range(0, enemies.Count)];
-        if (shooter != null)
-        {
-            Vector3 spawnPos = shooter.transform.position;
-            GameObject bullet = Instantiate(enemyBulletPrefab, spawnPos, Quaternion.identity);
-            Destroy(bullet, 5f);
-        }
+        if (shooter == null) return;
+
+        GameObject bullet = Instantiate(enemyBulletPrefab, shooter.transform.position, Quaternion.identity);
+        Destroy(bullet, 5f);
+
+        // Play enemy shoot sound on the shooter
+        shooter.PlayShootSound();
+
+        shooter.PlayShootAnimation(); // Trigger shoot animation
     }
 }
