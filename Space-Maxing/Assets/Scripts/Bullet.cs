@@ -27,13 +27,16 @@ public class Bullet : MonoBehaviour
         // Enemy bullets ignore other enemies
         if (isEnemyBullet)
         {
-            // Ignore collisions with enemies
-            if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
-            {
-                return;
-            }
+            // // Ignore collisions with enemies
+            // if (collision.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+            // {
+            //     return;
+            // }
 
-            // Hit player
+            if (collision.gameObject.CompareTag("Enemy"))
+                return;
+
+        // Hit player
             if (collision.gameObject.CompareTag("Player"))
             {
                 Player player = collision.gameObject.GetComponent<Player>();
